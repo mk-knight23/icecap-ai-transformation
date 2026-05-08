@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>IceAI Platform — Live Prototype</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#F0F9FF;--surface:#FFFFFF;--surface2:rgba(255,255,255,0.8);
+  --navy:#0C1A2E;--sky:#0EA5E9;--sky-d:#0284C7;--sky-l:#BAE6FD;
+  --teal:#0D9488;--gold:#F59E0B;--green:#10B981;--coral:#F43F5E;
+  --muted:#64748B;--border:rgba(14,165,233,0.18);
+  --glass:rgba(255,255,255,0.72);--blur:blur(16px);
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --r-md:12px;--r-lg:18px;--r-xl:24px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--navy);line-height:1.6;min-height:100vh}
+/* Layout */
+.shell{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+/* Sidebar */
+.sidebar{background:var(--navy);padding:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-brand{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand-name{font-size:1.15rem;font-weight:700;color:#fff;letter-spacing:.3px}
+.brand-sub{font-size:.72rem;color:rgba(255,255,255,.4);margin-top:2px;font-family:var(--mono)}
+.sidebar-nav{padding:16px 12px;flex:1}
+.nav-section{font-size:.65rem;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase;padding:0 8px;margin:16px 0 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.55);font-size:.875rem;font-weight:500;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
+.nav-item.active{background:rgba(14,165,233,.15);color:var(--sky-l);border:1px solid rgba(14,165,233,.2)}
+.nav-icon{width:20px;text-align:center;font-size:1rem;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--sky);color:white;font-size:.62rem;font-weight:700;padding:1px 7px;border-radius:10px}
+.sidebar-status{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:7px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.4)}50%{box-shadow:0 0 0 5px rgba(16,185,129,0)}}
+.status-txt{font-size:.75rem;color:rgba(255,255,255,.5)}
+/* Main content */
+.main{background:var(--bg);overflow-x:hidden}
+.topbar{background:var(--glass);backdrop-filter:var(--blur);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-size:1rem;font-weight:600;color:var(--navy)}
+.topbar-meta{font-size:.78rem;color:var(--muted)}
+.topbar-actions{display:flex;gap:10px;align-items:center}
+.badge-live{display:inline-flex;align-items:center;gap:5px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#059669;padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:700}
+/* Pages */
+.page{display:none;padding:28px}
+.page.active{display:block}
+/* DocAI */
+.section-title{font-size:1.3rem;font-weight:700;color:var(--navy);margin-bottom:4px}
+.section-sub{font-size:.875rem;color:var(--muted);margin-bottom:24px}
+.doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px;box-shadow:0 2px 12px rgba(14,165,233,.06)}
+.card-head{font-size:.85rem;font-weight:700;color:var(--sky-d);letter-spacing:.3px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+textarea{width:100%;min-height:200px;border:1px solid var(--border);border-radius:var(--r-md);padding:14px;font-family:var(--mono);font-size:.8rem;color:var(--navy);background:rgba(240,249,255,.5);resize:vertical;outline:none;transition:border-color .2s}
+textarea:focus{border-color:var(--sky);background:white}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 22px;border-radius:10px;font-weight:600;font-size:.875rem;cursor:pointer;border:none;transition:all .2s;font-family:var(--font)}
+.btn-primary{background:linear-gradient(135deg,var(--sky),var(--sky-d));color:white;box-shadow:0 4px 14px rgba(14,165,233,.35)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(14,165,233,.45)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{background:rgba(14,165,233,.07);color:var(--sky-d);border:1px solid var(--border)}
+.btn-ghost:hover{background:rgba(14,165,233,.12)}
+.output-area{background:rgba(240,249,255,.6);border:1px solid var(--border);border-radius:var(--r-md);padding:16px;min-height:200px;font-family:var(--mono);font-size:.78rem;color:var(--navy);white-space:pre-wrap;position:relative}
+.field-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(14,165,233,.08)}
+.field-row:last-child{border:none}
+.field-label{font-size:.8rem;color:var(--muted);font-weight:500}
+.field-value{font-size:.8rem;font-weight:600;color:var(--navy)}
+.field-value.green{color:var(--green)}
+.field-value.gold{color:var(--gold)}
+.field-value.coral{color:var(--coral)}
+.conf-bar{height:5px;border-radius:3px;background:rgba(14,165,233,.1);margin-top:14px;overflow:hidden}
+.conf-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--sky),var(--teal));width:0;transition:width 1.5s var(--ease-out)}
+/* Chat */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 160px)}
+.chat-msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;background:rgba(240,249,255,.3);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:14px}
+.msg{max-width:80%;padding:12px 16px;border-radius:var(--r-lg);font-size:.875rem;line-height:1.6}
+.msg.user{background:linear-gradient(135deg,var(--sky),var(--sky-d));color:white;align-self:flex-end;border-bottom-right-radius:4px}
+.msg.ai{background:var(--surface);border:1px solid var(--border);color:var(--navy);align-self:flex-start;border-bottom-left-radius:4px;box-shadow:0 2px 8px rgba(14,165,233,.06)}
+.msg.ai .msg-head{font-size:.7rem;font-weight:700;color:var(--sky);margin-bottom:5px;letter-spacing:.5px;text-transform:uppercase}
+.chat-input-row{display:flex;gap:10px}
+.chat-input{flex:1;border:1.5px solid var(--border);border-radius:12px;padding:12px 16px;font-family:var(--font);font-size:.875rem;outline:none;transition:border-color .2s;background:white}
+.chat-input:focus{border-color:var(--sky)}
+.typing{display:inline-flex;gap:4px;padding:2px 0}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--sky);animation:type-bounce .9s ease-in-out infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes type-bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+/* Price AI */
+.price-form{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+select,input[type=number],input[type=text]{border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-family:var(--font);font-size:.875rem;color:var(--navy);background:white;outline:none;transition:border-color .2s;-webkit-appearance:none}
+select:focus,input:focus{border-color:var(--sky)}
+.rate-result{background:linear-gradient(135deg,var(--navy),#0f2a4a);border-radius:var(--r-lg);padding:24px;color:white;text-align:center;position:relative;overflow:hidden;margin-top:20px}
+.rate-result::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 50%,rgba(14,165,233,.2),transparent 60%)}
+.rate-big{font-size:3.5rem;font-weight:800;color:var(--sky-l);line-height:1;position:relative}
+.rate-label{font-size:.8rem;color:rgba(255,255,255,.5);margin-bottom:6px}
+.rate-range{font-size:.85rem;color:rgba(255,255,255,.6);margin-top:6px}
+.rate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;position:relative}
+.rate-cell{background:rgba(255,255,255,.07);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,.1)}
+.rate-cell-val{font-size:1.1rem;font-weight:700;color:var(--sky-l)}
+.rate-cell-lbl{font-size:.7rem;color:rgba(255,255,255,.45);margin-top:2px}
+/* Dashboard mini */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 16px}
+.kpi-val{font-size:1.7rem;font-weight:800;background:linear-gradient(135deg,var(--sky),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.kpi-lbl{font-size:.75rem;color:var(--muted);margin-top:2px}
+.kpi-delta{font-size:.72rem;font-weight:600;color:var(--green);margin-top:3px}
+/* Loading spinner */
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Notification toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:500;z-index:9999;transform:translateY(100px);opacity:0;transition:all .3s;border-left:3px solid var(--sky)}
+.toast.show{transform:translateY(0);opacity:1}
+/* Suggested questions */
+.suggestions{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.sug{background:var(--glass);backdrop-filter:var(--blur);border:1px solid var(--border);color:var(--sky-d);padding:6px 13px;border-radius:20px;font-size:.78rem;font-weight:500;cursor:pointer;transition:all .2s}
+.sug:hover{background:rgba(14,165,233,.1);border-color:var(--sky)}
+</style>
+</head>
+<body>
+
+<div class="shell">
+<!-- ── SIDEBAR ──────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-name">⬡ IceAI Platform</div>
+    <div class="brand-sub">v1.0 · IceCap Group · Live Demo</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">AI Modules</div>
+    <button class="nav-item active" onclick="showPage('docai',this)">
+      <span class="nav-icon">📄</span>DocAI
+      <span class="nav-badge">LIVE</span>
+    </button>
+    <button class="nav-item" onclick="showPage('brokerai',this)">
+      <span class="nav-icon">🤖</span>BrokerAI
+      <span class="nav-badge">LIVE</span>
+    </button>
+    <button class="nav-item" onclick="showPage('priceai',this)">
+      <span class="nav-icon">💲</span>PriceAI
+      <span class="nav-badge">LIVE</span>
+    </button>
+    <button class="nav-item" onclick="showPage('underwrite',this)">
+      <span class="nav-icon">📋</span>UnderwriteAI
+      <span class="nav-badge">LIVE</span>
+    </button>
+    <div class="nav-section">Analytics</div>
+    <button class="nav-item" onclick="showPage('dashboard',this)">
+      <span class="nav-icon">📊</span>AI Dashboard
+    </button>
+    <button class="nav-item" onclick="showPage('pipeline',this)">
+      <span class="nav-icon">⚙️</span>Pipeline Monitor
+    </button>
+    <div class="nav-section">System</div>
+    <button class="nav-item" onclick="showPage('settings',this)">
+      <span class="nav-icon">🔑</span>API Settings
+    </button>
+  </nav>
+
+  <div class="sidebar-status">
+    <div style="margin-bottom:8px"><span class="status-dot"></span><span class="status-txt">Claude API Connected</span></div>
+    <div style="font-size:.7rem;color:rgba(255,255,255,.25);font-family:var(--mono)">claude-sonnet-4-20250514</div>
+  </div>
+</aside>
+
+<!-- ── MAIN ────────────────────────────────────────── -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="page-title">DocAI — Document Intelligence</div>
+      <div class="topbar-meta">IceCap Group · Private Lending AI Platform</div>
+    </div>
+    <div class="topbar-actions">
+      <div class="badge-live"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>AI Active</div>
+    </div>
+  </div>
+
+  <!-- ── DOCAI PAGE ────────────────────────────────── -->
+  <div class="page active" id="page-docai">
+    <div class="section-title">DocAI — Document Intelligence Pipeline</div>
+    <div class="section-sub">Paste any loan document text below — DocAI will extract all structured fields automatically using Claude AI.</div>
+
+    <div class="doc-grid">
+      <div>
+        <div class="card">
+          <div class="card-head">📄 Document Input</div>
+          <textarea id="doc-input" placeholder="Paste loan document, bank statement, purchase contract, or appraisal text here...
+
+Example: PURCHASE CONTRACT — Property: 142 Oak Street, Brooklyn NY 11201 — Purchase Price: $485,000 — Buyer: John Smith — ARV: $620,000 — Renovation Budget: $85,000 — Closing Date: June 15, 2026 — Earnest Money: $10,000...">PURCHASE CONTRACT &amp; LOAN APPLICATION
+
+Property Address: 742 Maple Avenue, Jersey City, NJ 07302
+Purchase Price: $525,000
+Borrower: Michael Chen
+Borrower Entity: MC Real Estate LLC
+Property Type: Single-Family Residential (Non-Owner Occupied)
+FICO Score: 718
+After Repair Value (ARV): $710,000
+Renovation Budget: $95,000
+Requested Loan Amount: $446,250
+LTV: 85%
+Loan Type: Fix &amp; Flip / Bridge
+Requested Term: 12 months
+Interest Only: Yes
+Exit Strategy: Sale post-renovation
+Borrower Experience: 7 completed flips in past 3 years
+Bank Statements: Average monthly balance $127,500 (last 3 months)
+Purchase Source: MLS Listing, off-market negotiated
+Title Company: Atlantic Title Services, Newark NJ
+Closing Date Requested: June 28, 2026</textarea>
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <button class="btn btn-primary" onclick="runDocAI()" id="doc-btn">
+              <div class="spin" id="doc-spin" style="display:none"></div>
+              ⚡ Run DocAI Extract
+            </button>
+            <button class="btn btn-ghost" onclick="clearDoc()">Clear</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card-head">🚩 Risk Flags</div>
+          <div id="risk-output" style="font-size:.82rem;color:var(--muted);min-height:60px">Run DocAI to see risk analysis...</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-head">✅ Extracted Fields → Salesforce Ready</div>
+          <div id="fields-output">
+            <div style="font-size:.82rem;color:var(--muted)">AI-extracted fields will appear here...</div>
+          </div>
+          <div class="conf-bar"><div class="conf-fill" id="conf-fill"></div></div>
+          <div id="conf-label" style="font-size:.72rem;color:var(--muted);margin-top:6px"></div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card-head">📝 AI Summary</div>
+          <div id="summary-output" style="font-size:.82rem;color:var(--muted);min-height:80px;line-height:1.7">Run DocAI to generate deal summary...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BROKERAI PAGE ─────────────────────────────── -->
+  <div class="page" id="page-brokerai">
+    <div class="section-title">BrokerAI — 24/7 Broker Assistant</div>
+    <div class="section-sub">Ask anything about IceCap loan products, eligibility, rates, and deal guidelines. Powered by Claude AI.</div>
+
+    <div class="suggestions" id="suggestions">
+      <div class="sug" onclick="askSuggestion(this)">What are IceCap's fix &amp; flip loan rates?</div>
+      <div class="sug" onclick="askSuggestion(this)">Min credit score for a DSCR loan?</div>
+      <div class="sug" onclick="askSuggestion(this)">How fast can a bridge loan close?</div>
+      <div class="sug" onclick="askSuggestion(this)">Do you lend in Texas on new construction?</div>
+      <div class="sug" onclick="askSuggestion(this)">What's the max LTV on a fix and flip?</div>
+      <div class="sug" onclick="askSuggestion(this)">How do I submit a deal as a broker?</div>
+    </div>
+
+    <div class="chat-wrap">
+      <div class="chat-msgs" id="chat-msgs">
+        <div class="msg ai">
+          <div class="msg-head">BrokerAI · IceCap Group</div>
+          👋 Hi! I'm BrokerAI — your 24/7 assistant for IceCap Group loan products. I can help with loan eligibility, rate estimates, deal guidelines, and deal status. What can I help you with today?
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="Ask about any IceCap loan product, eligibility, rates..." onkeydown="if(event.key==='Enter')sendChat()"/>
+        <button class="btn btn-primary" onclick="sendChat()" id="chat-btn">Send ⇗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PRICEAI PAGE ───────────────────────────────── -->
+  <div class="page" id="page-priceai">
+    <div class="section-title">PriceAI — Dynamic Loan Pricing Engine</div>
+    <div class="section-sub">Enter deal parameters to get AI-computed real-time rate recommendations based on IceCap's historical deal data.</div>
+
+    <div class="doc-grid">
+      <div class="card">
+        <div class="card-head">🔧 Deal Parameters</div>
+        <div class="price-form">
+          <div class="form-group">
+            <label class="form-label">Loan Type</label>
+            <select id="p-type"><option>Fix &amp; Flip / Bridge</option><option>DSCR / Term (30yr)</option><option>Ground-Up Construction</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Property State</label>
+            <select id="p-state"><option>NY</option><option>NJ</option><option>FL</option><option>TX</option><option>CA</option><option>PA</option><option>GA</option><option>IL</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Loan Amount ($)</label>
+            <input type="number" id="p-amount" value="450000" min="100000" max="3000000" step="25000"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">LTV (%)</label>
+            <input type="number" id="p-ltv" value="80" min="50" max="90" step="5"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">FICO Score</label>
+            <input type="number" id="p-fico" value="720" min="620" max="850" step="10"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Borrower Flips</label>
+            <select id="p-exp"><option value="0">First-time</option><option value="3" selected>3-5 flips</option><option value="10">6-10 flips</option><option value="20">10+ flips</option></select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="runPriceAI()" id="price-btn" style="width:100%">
+          <div class="spin" id="price-spin" style="display:none"></div>
+          ⚡ Compute AI Rate
+        </button>
+      </div>
+
+      <div>
+        <div class="rate-result" id="rate-result" style="display:none">
+          <div class="rate-label">AI-RECOMMENDED RATE</div>
+          <div class="rate-big" id="rate-val">—</div>
+          <div class="rate-range" id="rate-range"></div>
+          <div class="rate-grid">
+            <div class="rate-cell"><div class="rate-cell-val" id="rc-monthly">—</div><div class="rate-cell-lbl">Monthly Payment</div></div>
+            <div class="rate-cell"><div class="rate-cell-val" id="rc-spread">—</div><div class="rate-cell-lbl">Spread vs. Static</div></div>
+            <div class="rate-cell"><div class="rate-cell-val" id="rc-score">—</div><div class="rate-cell-lbl">Risk Score</div></div>
+          </div>
+        </div>
+
+        <div class="card" id="rate-reasoning" style="margin-top:14px;display:none">
+          <div class="card-head">🧠 AI Rate Reasoning</div>
+          <div id="rate-reason-text" style="font-size:.82rem;color:var(--muted);line-height:1.7"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── UNDERWRITE PAGE ───────────────────────────── -->
+  <div class="page" id="page-underwrite">
+    <div class="section-title">UnderwriteAI — Automated Memo Generator</div>
+    <div class="section-sub">Paste extracted deal data and AI generates a complete underwriting memo with risk analysis and preliminary recommendation.</div>
+
+    <div class="doc-grid">
+      <div class="card">
+        <div class="card-head">📥 Deal Data Input</div>
+        <textarea id="uw-input" placeholder="Paste deal summary or DocAI output here..." style="min-height:280px">Property: 742 Maple Avenue, Jersey City NJ 07302
+Borrower: Michael Chen / MC Real Estate LLC
+Loan Type: Fix &amp; Flip Bridge
+Purchase Price: $525,000
+ARV: $710,000
+Renovation: $95,000
+Loan Amount: $446,250 (85% LTV)
+FICO: 718
+Experience: 7 completed flips (3 years)
+Bank Balance: $127,500 avg monthly
+Exit: Sale post-renovation
+Term: 12 months interest only
+Closing: June 28, 2026</textarea>
+        <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="runUnderwrite()" id="uw-btn">
+          <div class="spin" id="uw-spin" style="display:none"></div>
+          ⚡ Generate Underwriting Memo
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-head">📋 AI Underwriting Memo</div>
+        <div id="uw-output" style="font-size:.82rem;color:var(--muted);line-height:1.8;min-height:340px;white-space:pre-wrap">Click "Generate Underwriting Memo" to create an AI-drafted memo for underwriter review...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DASHBOARD PAGE ───────────────────────────── -->
+  <div class="page" id="page-dashboard">
+    <div class="section-title">AI Platform Dashboard</div>
+    <div class="section-sub">Real-time performance metrics for the IceAI Platform across all modules.</div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val" id="kpi1">0</div><div class="kpi-lbl">Docs Processed (AI)</div><div class="kpi-delta" id="kd1">+0% vs manual</div></div>
+      <div class="kpi"><div class="kpi-val" id="kpi2">0</div><div class="kpi-lbl">AE Hours Saved</div><div class="kpi-delta" id="kd2">↓80% time/file</div></div>
+      <div class="kpi"><div class="kpi-val" id="kpi3">0</div><div class="kpi-lbl">Broker Queries (AI)</div><div class="kpi-delta" id="kd3">40% of AE load</div></div>
+      <div class="kpi"><div class="kpi-val" id="kpi4">0</div><div class="kpi-lbl">AI Revenue Uplift</div><div class="kpi-delta" id="kd4">+$0 est. / year</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card"><div class="card-head">📈 AI Processing Volume</div><canvas id="chart1" height="160"></canvas></div>
+      <div class="card"><div class="card-head">⏱ Time Savings / Deal</div><canvas id="chart2" height="160"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── PIPELINE PAGE ────────────────────────────── -->
+  <div class="page" id="page-pipeline">
+    <div class="section-title">AI Pipeline Monitor</div>
+    <div class="section-sub">Live view of the IceAI document processing and automation pipeline.</div>
+    <div id="pipeline-viz" style="font-family:var(--mono);font-size:.8rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;line-height:2.2"></div>
+  </div>
+
+  <!-- ── SETTINGS PAGE ────────────────────────────── -->
+  <div class="page" id="page-settings">
+    <div class="section-title">API Configuration</div>
+    <div class="section-sub">Configure your Claude API key to enable all live AI features.</div>
+    <div class="card" style="max-width:500px">
+      <div class="card-head">🔑 Claude API Key</div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">API Key</label>
+        <input type="text" id="api-key-input" placeholder="sk-ant-..." style="width:100%" value=""/>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Model</label>
+        <select style="width:100%"><option>claude-sonnet-4-20250514</option></select>
+      </div>
+      <button class="btn btn-primary" onclick="saveKey()">Save Configuration</button>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:12px">The API is called directly from the browser. Your key is stored in sessionStorage only.</div>
+    </div>
+  </div>
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+// ── PAGE ROUTING ────────────────────────────────────
+const pages={
+  docai:{id:'page-docai',title:'DocAI — Document Intelligence'},
+  brokerai:{id:'page-brokerai',title:'BrokerAI — 24/7 Broker Assistant'},
+  priceai:{id:'page-priceai',title:'PriceAI — Dynamic Pricing Engine'},
+  underwrite:{id:'page-underwrite',title:'UnderwriteAI — Memo Generator'},
+  dashboard:{id:'page-dashboard',title:'AI Analytics Dashboard'},
+  pipeline:{id:'page-pipeline',title:'Pipeline Monitor'},
+  settings:{id:'page-settings',title:'API Settings'},
+};
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(pages[name].id).classList.add('active');
+  document.getElementById('page-title').textContent=pages[name].title;
+  if(btn)btn.classList.add('active');
+  if(name==='dashboard')initDashboard();
+  if(name==='pipeline')initPipeline();
+}
+
+// ── API KEY ─────────────────────────────────────────
+function getKey(){return sessionStorage.getItem('claude_key')||''}
+function saveKey(){
+  const k=document.getElementById('api-key-input').value.trim();
+  if(k){sessionStorage.setItem('claude_key',k);showToast('✅ API key saved')}
+  else showToast('⚠ Please enter a valid API key');
+}
+
+// ── CLAUDE API CALL ──────────────────────────────────
+async function callClaude(system,user){
+  const key=getKey();
+  if(!key){showToast('⚠ Add API key in Settings first');throw new Error('no key')}
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1000,
+      system,
+      messages:[{role:'user',content:user}]
+    })
+  });
+  const d=await res.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.content[0].text;
+}
+
+// ── TOAST ────────────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── DOCAI ────────────────────────────────────────────
+async function runDocAI(){
+  const text=document.getElementById('doc-input').value.trim();
+  if(!text){showToast('⚠ Please paste document text');return}
+  const btn=document.getElementById('doc-btn');
+  const spin=document.getElementById('doc-spin');
+  btn.disabled=true;spin.style.display='inline-block';
+  document.getElementById('fields-output').innerHTML='<div style="font-size:.82rem;color:var(--muted)">Extracting with Claude AI...</div>';
+  document.getElementById('summary-output').textContent='Generating summary...';
+  document.getElementById('risk-output').textContent='Analyzing risk factors...';
+
+  const system=`You are DocAI, IceCap Group's document intelligence system. Extract structured loan fields and analyze risk.
+Return ONLY valid JSON in this exact format:
+{
+  "fields": {
+    "Borrower Name": "...",
+    "Property Address": "...",
+    "Loan Type": "...",
+    "Purchase Price": "...",
+    "Loan Amount": "...",
+    "LTV": "...",
+    "ARV": "...",
+    "FICO Score": "...",
+    "Loan Term": "...",
+    "Exit Strategy": "..."
+  },
+  "confidence": 94,
+  "risk_flags": ["..."],
+  "summary": "2-3 sentence deal summary for the underwriter."
+}`;
+
+  try{
+    const raw=await callClaude(system,`Extract fields from this document:\n\n${text}`);
+    const json=JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+    // Render fields
+    const fi=document.getElementById('fields-output');
+    fi.innerHTML='';
+    Object.entries(json.fields||{}).forEach(([k,v])=>{
+      const div=document.createElement('div');div.className='field-row';
+      let valClass='';
+      if(k==='LTV'&&parseInt(v)>85)valClass='coral';
+      else if(k==='FICO'&&parseInt(v)>=700)valClass='green';
+      else if(k==='LTV')valClass='green';
+      div.innerHTML=`<span class="field-label">${k}</span><span class="field-value ${valClass}">${v||'—'}</span>`;
+      fi.appendChild(div);
+    });
+
+    // Confidence bar
+    const conf=json.confidence||90;
+    document.getElementById('conf-fill').style.width=conf+'%';
+    document.getElementById('conf-label').textContent=`AI Confidence: ${conf}% — ${conf>=90?'High confidence, ready for underwriter':'Review recommended'}`;
+
+    // Risk flags
+    const rf=document.getElementById('risk-output');
+    if(json.risk_flags?.length){
+      rf.innerHTML=json.risk_flags.map(f=>`<div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:6px;font-size:.82rem"><span style="color:var(--gold);flex-shrink:0">⚠</span><span style="color:var(--navy)">${f}</span></div>`).join('');
+    }else{
+      rf.innerHTML='<span style="color:var(--green);font-size:.82rem">✅ No significant risk flags identified</span>';
+    }
+
+    // Summary
+    document.getElementById('summary-output').innerHTML=`<span style="color:var(--navy)">${json.summary||'Deal extracted successfully.'}</span>`;
+    showToast('✅ DocAI extraction complete');
+  }catch(e){
+    document.getElementById('fields-output').innerHTML=`<div style="color:var(--coral);font-size:.82rem">Error: ${e.message}. Check API key in Settings.</div>`;
+    showToast('❌ '+e.message);
+  }
+  btn.disabled=false;spin.style.display='none';
+}
+function clearDoc(){
+  document.getElementById('doc-input').value='';
+  document.getElementById('fields-output').innerHTML='<div style="font-size:.82rem;color:var(--muted)">AI-extracted fields will appear here...</div>';
+  document.getElementById('summary-output').textContent='Run DocAI to generate deal summary...';
+  document.getElementById('risk-output').textContent='Run DocAI to see risk analysis...';
+  document.getElementById('conf-fill').style.width='0';
+  document.getElementById('conf-label').textContent='';
+}
+
+// ── BROKERAI ─────────────────────────────────────────
+const brokerCtx=`You are BrokerAI, the 24/7 AI assistant for IceCap Group — one of the largest private money lenders in the US.
+
+IceCap Products:
+- Bridge/FixNFlip®: Short-term flip loans, close in days, low rates, no fee to apply, 85% LTV, 12-month terms
+- DSCR/Term: 30-year rental loans, $100k-$3M, 30-day rate lock, qualify on property cash flow, min 680 FICO
+- Ground-Up: Construction loans, quick draw process, 2-3 week close, extensions available
+- All loans: Non-owner occupied only, 50+ states, min $100k
+
+Be helpful, specific, and concise. Mention that exact rates are deal-specific and recommend booking a call for personalized quotes.`;
+
+async function sendChat(){
+  const inp=document.getElementById('chat-input');
+  const msg=inp.value.trim();
+  if(!msg)return;
+  inp.value='';
+  addMsg(msg,'user');
+  const typing=addMsg('<div class="typing"><span></span><span></span><span></span></div>','ai',true);
+  document.getElementById('chat-btn').disabled=true;
+  try{
+    const reply=await callClaude(brokerCtx,msg);
+    typing.remove();
+    addMsg(reply,'ai');
+  }catch(e){
+    typing.remove();
+    addMsg('Sorry, I need a valid API key to respond. Please add your key in Settings → API Configuration.','ai');
+  }
+  document.getElementById('chat-btn').disabled=false;
+}
+function addMsg(text,role,raw=false){
+  const wrap=document.getElementById('chat-msgs');
+  const div=document.createElement('div');
+  div.className=`msg ${role}`;
+  if(role==='ai')div.innerHTML=`<div class="msg-head">BrokerAI · IceCap</div>${raw?text:text.replace(/\n/g,'<br>')}`;
+  else div.textContent=text;
+  wrap.appendChild(div);
+  wrap.scrollTop=wrap.scrollHeight;
+  return div;
+}
+function askSuggestion(el){
+  document.getElementById('chat-input').value=el.textContent;
+  sendChat();
+}
+
+// ── PRICEAI ──────────────────────────────────────────
+async function runPriceAI(){
+  const type=document.getElementById('p-type').value;
+  const state=document.getElementById('p-state').value;
+  const amount=parseInt(document.getElementById('p-amount').value);
+  const ltv=parseInt(document.getElementById('p-ltv').value);
+  const fico=parseInt(document.getElementById('p-fico').value);
+  const exp=document.getElementById('p-exp').value;
+
+  const btn=document.getElementById('price-btn');
+  const spin=document.getElementById('price-spin');
+  btn.disabled=true;spin.style.display='inline-block';
+
+  const system=`You are PriceAI, IceCap Group's ML-powered loan pricing engine. Return ONLY JSON:
+{
+  "rate": "10.25%",
+  "low": "9.75%",
+  "high": "10.75%",
+  "monthly_io": "$3,844",
+  "spread_vs_static": "+18bps",
+  "risk_score": "B+",
+  "reasoning": "3-4 sentence explanation of rate factors."
+}`;
+  const prompt=`Price this loan: Type: ${type}, State: ${state}, Amount: $${amount.toLocaleString()}, LTV: ${ltv}%, FICO: ${fico}, Borrower experience: ${exp} completed deals.`;
+
+  try{
+    const raw=await callClaude(system,prompt);
+    const json=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    document.getElementById('rate-result').style.display='block';
+    document.getElementById('rate-reasoning').style.display='block';
+    document.getElementById('rate-val').textContent=json.rate||'10.25%';
+    document.getElementById('rate-range').textContent=`Range: ${json.low||'9.75%'} – ${json.high||'10.75%'}`;
+    document.getElementById('rc-monthly').textContent=json.monthly_io||'—';
+    document.getElementById('rc-spread').textContent=json.spread_vs_static||'—';
+    document.getElementById('rc-score').textContent=json.risk_score||'—';
+    document.getElementById('rate-reason-text').textContent=json.reasoning||'';
+    showToast('✅ Rate computed by PriceAI');
+  }catch(e){
+    document.getElementById('rate-result').style.display='none';
+    showToast('❌ '+e.message+' — Check API key in Settings');
+  }
+  btn.disabled=false;spin.style.display='none';
+}
+
+// ── UNDERWRITEAI ─────────────────────────────────────
+async function runUnderwrite(){
+  const text=document.getElementById('uw-input').value.trim();
+  if(!text){showToast('⚠ Enter deal data');return}
+  const btn=document.getElementById('uw-btn');
+  const spin=document.getElementById('uw-spin');
+  btn.disabled=true;spin.style.display='inline-block';
+  document.getElementById('uw-output').textContent='Generating underwriting memo with Claude AI...';
+
+  const system=`You are UnderwriteAI for IceCap Group. Write a professional first-draft underwriting memo.
+Format:
+UNDERWRITING MEMO — IceCap Group
+Date: [today]
+Deal ID: IC-[random 4 digits]
+
+DEAL SUMMARY
+[2-3 sentences]
+
+BORROWER PROFILE
+[strength assessment, experience, financials]
+
+PROPERTY ANALYSIS
+[location, type, ARV analysis, renovation feasibility]
+
+RISK ASSESSMENT
+[list 3-5 factors, categorized Low/Medium/High]
+
+STRUCTURAL REVIEW
+[LTV, coverage, exit strategy viability]
+
+PRELIMINARY RECOMMENDATION
+[Approve / Approve with Conditions / Request More Info]
+[Brief rationale]
+
+Keep it professional, concise, and actionable for the underwriter. Flag any missing info.`;
+
+  try{
+    const memo=await callClaude(system,`Generate underwriting memo for:\n\n${text}`);
+    document.getElementById('uw-output').innerHTML=`<span style="color:var(--navy)">${memo.replace(/\n/g,'<br>')}</span>`;
+    showToast('✅ UnderwriteAI memo generated');
+  }catch(e){
+    document.getElementById('uw-output').textContent='Error: '+e.message+'. Add API key in Settings.';
+    showToast('❌ '+e.message);
+  }
+  btn.disabled=false;spin.style.display='none';
+}
+
+// ── DASHBOARD ─────────────────────────────────────────
+let chartsInit=false;
+function initDashboard(){
+  if(chartsInit)return;chartsInit=true;
+  // Animate KPIs
+  const kpis=[
+    {id:'kpi1',target:1247,suffix:'',delay:0,delta:'kd1',dv:'+84% vs manual'},
+    {id:'kpi2',target:312,suffix:'h',delay:100,delta:'kd2',dv:'↓80% time/file'},
+    {id:'kpi3',target:893,suffix:'',delay:200,delta:'kd3',dv:'40% of AE load'},
+    {id:'kpi4',target:2.2,suffix:'M',delay:300,delta:'kd4',dv:'+$2.2M est./yr'},
+  ];
+  kpis.forEach(k=>{
+    setTimeout(()=>{
+      let c=0,t=k.target,step=t/60;
+      const el=document.getElementById(k.id);
+      function tick(){
+        c=Math.min(c+step,t);
+        el.textContent=(k.id==='kpi4'?'$'+c.toFixed(1):Math.round(c))+k.suffix;
+        if(c<t)requestAnimationFrame(tick);
+      }tick();
+      document.getElementById(k.delta).textContent=k.dv;
+    },k.delay);
+  });
+
+  // Chart 1 — volume
+  const c1=document.getElementById('chart1').getContext('2d');
+  new Chart(c1,{type:'bar',data:{
+    labels:['Jan','Feb','Mar','Apr','May','Jun'],
+    datasets:[{label:'AI Processed',data:[142,198,267,312,389,445],backgroundColor:'rgba(14,165,233,.7)',borderRadius:6,borderSkipped:false}]
+  },options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(14,165,233,.08)'}}}}});
+
+  // Chart 2 — time savings
+  const c2=document.getElementById('chart2').getContext('2d');
+  new Chart(c2,{type:'line',data:{
+    labels:['Jan','Feb','Mar','Apr','May','Jun'],
+    datasets:[
+      {label:'Manual (min)',data:[25,25,25,25,25,25],borderColor:'#CBD5E1',borderDash:[4,4],tension:.4,pointRadius:0},
+      {label:'DocAI (min)',data:[24,18,12,8,6,5],borderColor:'#0EA5E9',backgroundColor:'rgba(14,165,233,.1)',fill:true,tension:.4,pointRadius:3}
+    ]
+  },options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(14,165,233,.08)'}}}}});
+}
+
+// ── PIPELINE ──────────────────────────────────────────
+function initPipeline(){
+  const steps=[
+    {icon:'📤',label:'Broker uploads documents',status:'✅',col:'var(--green)'},
+    {icon:'👁',label:'DocAI: Vision AI reads PDF/image',status:'✅',col:'var(--green)'},
+    {icon:'🔍',label:'Claude LLM extracts structured fields',status:'⚡ Running',col:'var(--sky)'},
+    {icon:'✅',label:'Validation: completeness + risk check',status:'⏳ Queued',col:'var(--gold)'},
+    {icon:'📊',label:'Salesforce auto-population (20+ fields)',status:'⏳ Queued',col:'var(--gold)'},
+    {icon:'📋',label:'UnderwriteAI generates memo draft',status:'⏳ Queued',col:'var(--muted)'},
+    {icon:'💲',label:'PriceAI computes recommended rate',status:'⏳ Queued',col:'var(--muted)'},
+    {icon:'🔔',label:'AE notification: pre-filled deal ready',status:'⏳ Queued',col:'var(--muted)'},
+  ];
+  const el=document.getElementById('pipeline-viz');
+  el.innerHTML=steps.map((s,i)=>`
+    <div id="ps-${i}" style="display:flex;align-items:center;gap:14px;padding:8px 12px;border-radius:8px;transition:background .3s">
+      <span style="font-size:1.1rem;flex-shrink:0">${s.icon}</span>
+      <span style="flex:1;color:var(--navy);font-size:.82rem">${s.label}</span>
+      <span style="color:${s.col};font-size:.78rem;font-weight:600">${s.status}</span>
+    </div>
+    ${i<steps.length-1?'<div style="color:rgba(14,165,233,.3);padding:0 14px;font-size:.75rem">│</div>':''}
+  `).join('');
+
+  // Animate pipeline
+  let i=2;
+  const timer=setInterval(()=>{
+    if(i>=steps.length){clearInterval(timer);return}
+    const row=document.getElementById(`ps-${i}`);
+    row.style.background='rgba(14,165,233,.06)';
+    row.querySelector('span:last-child').textContent='⚡ Running';
+    row.querySelector('span:last-child').style.color='var(--sky)';
+    setTimeout(()=>{
+      row.querySelector('span:last-child').textContent='✅ Done';
+      row.querySelector('span:last-child').style.color='var(--green)';
+      row.style.background='';
+      i++;
+    },1200);
+  },1500);
+}
+</script>
+</body>
+</html>
